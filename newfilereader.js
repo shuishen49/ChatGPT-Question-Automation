@@ -1,85 +1,157 @@
 // ==UserScript==
-// @name         File Reader
+// @name         ChatGPT-Question-Automation
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.17
 // @description  Read a file and input its contents into an input field
 // @author       You
 // @match        https://chat.openai.com/*
+// @match        https://chatgpt.com/*
+// @match        https://new.oaifree.com/*
 // @grant        none
+// @license MIT
+// @downloadURL  https://update.greasyfork.org/scripts/468298/ChatGPT-Question-Automation.user.js
+// @updateURL    https://update.greasyfork.org/scripts/468298/ChatGPT-Question-Automation.meta.js
 // ==/UserScript==
 
 (function () {
   "use strict";
+
   const panel = document.createElement("div");
   panel.style.position = "fixed";
-  panel.style.top = "0";
+  panel.style.top = "50px";
   panel.style.right = "0";
   panel.style.backgroundColor = "white";
   panel.style.padding = "10px";
   panel.style.border = "1px solid black";
-  panel.style.width = "100px"; // 控制面板的宽度
-  panel.style.fontFamily = "'Arial', sans-serif"; // 设定字体
+  panel.style.width = "100px";
+  panel.style.fontFamily = "'Arial', sans-serif";
+  panel.style.backgroundColor = "#f2f2f2";
+  panel.style.borderRadius = "10px";
   document.body.appendChild(panel);
 
-  // 在面板上添加文件输入元素
+  const hoverPanel = document.createElement("div");
+  hoverPanel.style.position = "fixed";
+  hoverPanel.style.top = "0";
+  hoverPanel.style.right = "110px";
+  hoverPanel.style.backgroundColor = "white";
+  hoverPanel.style.padding = "10px";
+  hoverPanel.style.border = "1px solid black";
+  hoverPanel.style.width = "200px";
+  hoverPanel.style.fontFamily = "'Arial', sans-serif";
+  hoverPanel.style.opacity = "0";
+  hoverPanel.style.backgroundColor = "#f2f2f2";
+  hoverPanel.style.borderRadius = "10px";
+  hoverPanel.style.transition = "opacity 0.3s ease";
+  document.body.appendChild(hoverPanel);
+
+  let timeoutId;
+  const showHoverPanel = () => {
+    clearTimeout(timeoutId);
+    hoverPanel.style.opacity = "1";
+    hoverPanel.style.pointerEvents = "auto";
+  };
+
+  const hideHoverPanel = () => {
+    timeoutId = setTimeout(() => {
+      hoverPanel.style.opacity = "0";
+      hoverPanel.style.pointerEvents = "none";
+    }, 200);
+  };
+
+  panel.addEventListener("mouseover", showHoverPanel);
+  panel.addEventListener("mouseout", hideHoverPanel);
+  hoverPanel.addEventListener("mouseover", showHoverPanel);
+  hoverPanel.addEventListener("mouseout", hideHoverPanel);
+
   const fileInput = document.createElement("input");
   fileInput.type = "file";
-  fileInput.style.marginTop = "10px"; // 增加间距
-  fileInput.style.width = "100%"; // 控制输入框的宽度
+  fileInput.style.marginTop = "10px";
+  fileInput.style.width = "100%";
   panel.appendChild(fileInput);
 
-  // 显示文件名的标签
   const fileNameLabel = document.createElement("span");
-  fileNameLabel.style.display = "block"; // 使得每个元素占用一行
-  fileNameLabel.style.marginTop = "10px"; // 增加间距
+  fileNameLabel.style.display = "block";
+  fileNameLabel.style.marginTop = "10px";
+  fileNameLabel.style.overflow = "hidden";
+  fileNameLabel.style.textOverflow = "ellipsis";
   panel.appendChild(fileNameLabel);
 
-  // 在面板上添加输入元素以获取通用提示
   const promptLabel = document.createElement("span");
   promptLabel.textContent = "Prompt: ";
-  promptLabel.style.display = "block"; // 使得每个元素占用一行
-  panel.appendChild(promptLabel);
+  promptLabel.style.display = "block";
+  hoverPanel.appendChild(promptLabel);
   const promptInput = document.createElement("input");
   promptInput.type = "text";
-  promptInput.style.marginTop = "10px"; // 增加间距
-  promptInput.style.width = "100%"; // 控制输入框的宽度
-  panel.appendChild(promptInput);
-  
-  // 在面板上添加是否每25次发送后休息的复选框
-  
+  promptInput.style.marginTop = "10px";
+  promptInput.style.width = "100%";
+  hoverPanel.appendChild(promptInput);
+
+  const restDiv = document.createElement("div");
+  restDiv.style.display = "flex";
+  restDiv.style.alignItems = "center";
+  restDiv.style.justifyContent = "space-between";
+  restDiv.style.width = "100%";
+  hoverPanel.appendChild(restDiv);
+
   const restLabel = document.createElement("label");
   restLabel.textContent = "sleep after every 25 sends";
-  restLabel.style.display = "block"; // 使得每个元素占用一行
-  panel.appendChild(restLabel);
+  restDiv.appendChild(restLabel);
 
   const restCheckbox = document.createElement("input");
   restCheckbox.type = "checkbox";
-  restCheckbox.style.marginTop = "10px"; // 增加间距
-  panel.appendChild(restCheckbox);
-  
-  // 每次信息发送后，暂停时间输入
+  restDiv.appendChild(restCheckbox);
+
   const delayInput = document.createElement("input");
   delayInput.type = "number";
-  delayInput.style.marginTop = "10px"; // 增加间距
-  delayInput.style.width = "100%"; // 控制输入框的宽度
+  delayInput.style.marginTop = "10px";
+  delayInput.style.width = "100%";
   delayInput.placeholder = "sleeptime(s)";
-  panel.appendChild(delayInput);
+  hoverPanel.appendChild(delayInput);
 
-  // 在面板上添加确认按钮
   const confirmButton = document.createElement("button");
   confirmButton.textContent = "确认";
-  confirmButton.style.marginTop = "10px"; // 增加间距
-  confirmButton.style.width = "100%"; // 控制按钮的宽度
+  confirmButton.style.marginTop = "10px";
+  confirmButton.style.width = "100%";
+  confirmButton.style.backgroundColor = "#4CAF50";
+  confirmButton.style.color = "white";
+  confirmButton.style.border = "none";
+  confirmButton.style.cursor = "pointer";
+  confirmButton.style.borderRadius = "5px";
   panel.appendChild(confirmButton);
 
-  // 在面板上添加任务完成进度的标签
+  const stopButton = document.createElement("button");
+  stopButton.textContent = "停止";
+  stopButton.style.marginTop = "10px";
+  stopButton.style.width = "100%";
+  stopButton.style.backgroundColor = "#f44336";
+  stopButton.style.color = "white";
+  stopButton.style.border = "none";
+  stopButton.style.cursor = "pointer";
+  stopButton.style.borderRadius = "5px";
+  panel.appendChild(stopButton);
+
+  confirmButton.addEventListener("mouseover", function () {
+    confirmButton.style.backgroundColor = "#45a049";
+  });
+
+  confirmButton.addEventListener("mouseout", function () {
+    confirmButton.style.backgroundColor = "#4CAF50";
+  });
+
+  stopButton.addEventListener("mouseover", function () {
+    stopButton.style.backgroundColor = "#e53935";
+  });
+
+  stopButton.addEventListener("mouseout", function () {
+    stopButton.style.backgroundColor = "#f44336";
+  });
+
   const progressBar = document.createElement("progress");
-  progressBar.style.width = "100%"; // 控制进度条的宽度
-  progressBar.style.marginTop = "10px"; // 增加间距
-  progressBar.max = 1; // 最大值设为1（代表100%）
+  progressBar.style.width = "100%";
+  progressBar.style.marginTop = "10px";
+  progressBar.max = 1;
   panel.appendChild(progressBar);
 
-  // 在面板上添加一个用于显示提示的 div 元素
   const alertDiv = document.createElement("div");
   alertDiv.style.position = "fixed";
   alertDiv.style.top = "10px";
@@ -87,28 +159,33 @@
   alertDiv.style.padding = "10px";
   alertDiv.style.backgroundColor = "red";
   alertDiv.style.color = "white";
-  alertDiv.style.display = "none"; // 默认隐藏
+  alertDiv.style.display = "none";
+  alertDiv.style.backgroundColor = "#f44336";
+  alertDiv.style.color = "white";
+  alertDiv.style.borderRadius = "5px";
   document.body.appendChild(alertDiv);
 
-  // 创建一个函数用于显示提示
   function showAlert(message) {
     alertDiv.textContent = message;
-    alertDiv.style.display = "block"; // 显示提示
+    alertDiv.style.display = "block";
     setTimeout(function () {
-      alertDiv.style.display = "none"; // 3 秒后隐藏提示
+      alertDiv.style.display = "none";
     }, 3000);
   }
 
-  // 当用户点击确认按钮时，开始执行操作
+  let shouldStop = false;
+
+  stopButton.addEventListener("click", function () {
+    shouldStop = true;
+    showAlert("任务已停止");
+  });
+
   confirmButton.addEventListener("click", function () {
     let fileContent;
 
-    // 如果 localStorage 中存在文件
     if (localStorage.getItem("savedFile")) {
-      // 从 localStorage 获取文件内容
       fileContent = localStorage.getItem("savedFile");
     } else {
-      // 从文件输入框获取文件
       const file = fileInput.files[0];
       if (!file) {
         showAlert("请先选择文件");
@@ -127,85 +204,80 @@
   });
 
   function handleFileContent(fileContent) {
-    // 用 fileContent 进行后续操作...
-    const jsonData = JSON.parse(fileContent);
+    const lines = fileContent.split('\n').filter(line => line.trim() !== '');
 
-    if (Array.isArray(jsonData)) {
+    if (Array.isArray(lines)) {
       let messagesSent = 0;
       let messageCount = 0;
 
-      // 在 handleFileContent 中，获取通用提示
       const prompt = promptInput.value || localStorage.getItem("prompt");
       localStorage.setItem("prompt", prompt);
-      progressBar.max = jsonData.length; // 设置进度条的最大值
+      progressBar.max = lines.length;
 
       function sendMessage() {
-        if (messageCount >= jsonData.length) {
-          //   taskProgressLabel.textContent = "Finish!"; // 更新任务进度标签的内容
-          progressBar.value = jsonData.length; // 将进度条设为满值
+        if (messageCount >= lines.length || shouldStop) {
+          progressBar.value = lines.length;
           return;
         }
 
         const inputField = document.querySelector("#prompt-textarea");
-        if (!inputField) {
+        const sendButton = document.querySelector('[data-testid="fruitjuice-send-button"]');
+
+        if (!inputField || !sendButton) {
           return;
         }
-        const item = jsonData[messageCount++];
-        //添加通用提示到消息的开头
-        inputField.value = prompt  + item.title;
-        // inputField.value = item.title;
 
-        var inputEvent = new Event("input", { bubbles: true });
-        inputField.dispatchEvent(inputEvent);
+        if (sendButton.disabled) {
+          const item = lines[messageCount++];
+          inputField.value = (prompt && prompt !== "null" ? prompt : "") + item;
 
-        setTimeout(function () {
-          var submit_button = document.querySelector(
-            "#__next > div.overflow-hidden.w-full.h-full.relative.flex.z-0 > div > div > main > div.absolute.bottom-0.left-0.w-full.border-t.md\\:border-t-0.dark\\:border-white\\/20.md\\:border-transparent.md\\:dark\\:border-transparent.md\\:bg-vert-light-gradient.bg-white.dark\\:bg-gray-800.md\\:\\!bg-transparent.dark\\:md\\:bg-vert-dark-gradient.pt-2 > form > div > div.flex.flex-col.w-full.py-\\[10px\\].flex-grow.md\\:py-4.md\\:pl-4.relative.border.border-black\\/10.bg-white.dark\\:border-gray-900\\/50.dark\\:text-white.dark\\:bg-gray-700.rounded-xl.shadow-xs.dark\\:shadow-xs > button"
-          );
-          submit_button.click();
-        }, 1000);
+          var inputEvent = new Event("input", { bubbles: true });
+          inputField.dispatchEvent(inputEvent);
 
-        var sleep_time = 100000 || delayInput.value * 1000;
-        messagesSent++;
+          setTimeout(function () {
+            sendButton.click();
+          }, 1000);
 
-        // taskProgressLabel.textContent = `progress rate : ${messagesSent} / ${jsonData.length} `; // 更新任务进度标签的内容
-        progressBar.value = messagesSent; // 更新进度条的值
+          var sleep_time = 60000 || delayInput.value * 1000;
+          messagesSent++;
 
-        if (restCheckbox.checked && messagesSent >= 25) {
-          // 如果用户选中了复选框，并且已经发送了25个消息，等待三小时再发送下一个
-          setTimeout(sendMessage, 3 * 60 * 60 * 1000 - 25 * sleep_time);
-          messagesSent = 0;
+          progressBar.value = messagesSent;
+
+          if (restCheckbox.checked && messagesSent >= 25) {
+            setTimeout(sendMessage, 3 * 60 * 60 * 1000 - 25 * sleep_time);
+            messagesSent = 0;
+          } else {
+            setTimeout(sendMessage, sleep_time);
+          }
         } else {
-          setTimeout(sendMessage, sleep_time);
+          setTimeout(sendMessage, 1000); // Retry after 1 second if button is not disabled
         }
       }
 
       sendMessage();
     }
   }
-  // 当文件改变时，更新标签中的文件名
+
   fileInput.addEventListener("change", function () {
     if (this.files && this.files.length) {
       fileNameLabel.textContent = this.files[0].name;
-      // 将文件内容存储到 localStorage
       var reader = new FileReader();
       reader.onload = function (event) {
         localStorage.setItem("savedFile", event.target.result);
-        localStorage.setItem("savedFileName", fileInput.files[0].name); // 存储文件名
+        localStorage.setItem("savedFileName", fileInput.files[0].name);
       };
       reader.readAsText(this.files[0]);
     }
   });
 
-  // 当页面加载时，尝试从 localStorage 恢复文件名
   window.addEventListener("load", function () {
     var savedFileName = localStorage.getItem("savedFileName");
     if (savedFileName) {
-      fileNameLabel.textContent = savedFileName; // 更新标签中的文件名
+      fileNameLabel.textContent = savedFileName;
     }
     var prompt = localStorage.getItem("prompt");
     if (prompt) {
-        promptInput.value = prompt;
+      promptInput.value = prompt;
     }
   });
 })();
