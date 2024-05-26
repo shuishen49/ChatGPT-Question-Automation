@@ -1,9 +1,13 @@
 # 如何使用Tampermonkey脚本自动化和ChatGPT进行交互
 
 fork自https://github.com/14790897/ChatGPT-Question-Automation
-1.修改了之前的提问方式，改成读取txt文本
+
+1.修改了之前的提问方式，改成读取txt文本。
+
 2.我不确定进度条是否可用。请自行测试。
-3.这是我写的第一个Tampermonkey脚本，我对这个项目还不是很熟悉
+
+3.这是我写的第一个Tampermonkey脚本，我对这个项目还不是很熟悉。
+
 
 ## 前提条件
 1. 安装Tampermonkey插件。Tampermonkey可以在[Chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en)或[Firefox](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)的插件市场免费下载。
