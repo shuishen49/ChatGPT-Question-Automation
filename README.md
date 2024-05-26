@@ -1,6 +1,9 @@
 # 如何使用Tampermonkey脚本自动化和ChatGPT进行交互
 
-本指南将介绍如何使用提供的Tampermonkey脚本自动从一个JSON文件中读取问题，并将这些问题自动输入到OpenAI的ChatGPT页面，以便您可以实现自动化问题处理。
+fork自https://github.com/14790897/ChatGPT-Question-Automation
+1.修改了之前的提问方式，改成读取txt文本
+2.我不确定进度条是否可用。请自行测试。
+3.这是我写的第一个Tampermonkey脚本，我对这个项目还不是很熟悉
 
 ## 前提条件
 1. 安装Tampermonkey插件。Tampermonkey可以在[Chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en)或[Firefox](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)的插件市场免费下载。
@@ -8,14 +11,11 @@
 
 ## 使用说明
 
-### 1. 导入JSON文件
+### 1. 导入txt文件
 首先，点击页面右上角的浮动面板中的文件输入框，选择你的JSON文件。该文件的格式应为一个包含问题的数组，每个问题为一个JSON对象，其中包含一个名为`title`的键，其值为要提交的问题。例如：
-```json
-[
-  {"title": "What is AI?"},
-  {"title": "Who invented the internet?"},
-  ...
-]
+```txt
+一行一个问题
+这是第二个问题
 ```
 
 ### 2. 设定通用提示（可选）
